@@ -1,0 +1,27 @@
+# Sécurité pour le dossier uploads
+# Empêcher l'exécution de scripts PHP
+<Files "*.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Empêcher l'exécution d'autres scripts
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Autoriser seulement les images
+<FilesMatch "\.(jpg|jpeg|png|gif)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Désactiver l'affichage du contenu du répertoire
+Options -Indexes
+
+# Empêcher l'accès aux fichiers cachés
+<Files ".*">
+    Order Allow,Deny
+    Deny from all
+</Files> 
