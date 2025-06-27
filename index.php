@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page d'accueil du portfolio
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Accueil';
 
-// Récupérer les derniers projets publics
+// Récupération des derniers projets publics
 $pdo = getDBConnection();
 $stmt = $pdo->prepare("
     SELECT p.*, u.first_name, u.last_name 
@@ -15,7 +18,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $recent_projects = $stmt->fetchAll();
 
-// Récupérer les compétences les plus populaires
+// Récupération des compétences les plus populaires
 $stmt = $pdo->prepare("
     SELECT s.name, s.description, s.category, COUNT(us.id) as user_count
     FROM skills s
@@ -27,6 +30,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $popular_skills = $stmt->fetchAll();
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -169,4 +173,5 @@ include 'includes/header.php';
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?> 
+<?php // Inclusion du pied de page HTML
+include 'includes/footer.php'; ?> 

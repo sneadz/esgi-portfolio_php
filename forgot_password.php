@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page de demande de réinitialisation du mot de passe
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Mot de Passe Oublié';
 
-// Rediriger si déjà connecté
+// Redirection si l'utilisateur est déjà connecté
 if (isLoggedIn()) {
     redirect('index.php');
 }
@@ -11,22 +14,24 @@ if (isLoggedIn()) {
 $errors = [];
 $success_message = '';
 
+// Traitement du formulaire de demande de réinitialisation
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = sanitizeInput($_POST['email'] ?? '');
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
 
     // Validation de l'email
     if (empty($email)) {
-        $errors[] = 'L\'adresse email est requise.';
+        $errors[] = "L'adresse email est requise.";
     } elseif (!validateEmail($email)) {
-        $errors[] = 'L\'adresse email n\'est pas valide.';
+        $errors[] = "L'adresse email n'est pas valide.";
     }
 
+    // Si pas d'erreurs, génération du lien de réinitialisation
     if (empty($errors)) {
         try {
             $pdo = getDBConnection();
@@ -35,17 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch();
 
             if ($user) {
-                // Générer un token de réinitialisation
+                // Génération d'un token de réinitialisation
                 $reset_token = bin2hex(random_bytes(32));
                 $expires_at = date('Y-m-d H:i:s', time() + 3600); // Expire dans 1 heure
 
-                // Sauvegarder le token en base
+                // Sauvegarde du token en base
                 $stmt = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?");
                 if ($stmt->execute([$reset_token, $expires_at, $user['id']])) {
-                    // Envoyer l'email (simulation - en production, utilisez une vraie librairie d'email)
+                    // En production, envoi du mail. Ici, affichage du lien pour la démo
                     $reset_link = APP_URL . '/reset_password.php?token=' . $reset_token;
-                    
-                    // Pour la démo, on affiche le lien au lieu d'envoyer un email
                     $success_message = 'Un lien de réinitialisation a été généré. En production, il serait envoyé par email.<br><br>';
                     $success_message .= '<strong>Lien de réinitialisation (démo) :</strong><br>';
                     $success_message .= '<a href="' . $reset_link . '" class="btn btn-primary mt-2">Réinitialiser le mot de passe</a>';
@@ -53,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Erreur lors de la génération du lien de réinitialisation.';
                 }
             } else {
-                // Pour des raisons de sécurité, on affiche le même message
+                // Message générique pour la sécurité
                 $success_message = 'Si cette adresse email existe dans notre base de données, un lien de réinitialisation a été généré.';
             }
         } catch (PDOException $e) {
@@ -62,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -93,6 +97,7 @@ include 'includes/header.php';
                         Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
                     </p>
 
+                    <!-- Formulaire de demande de réinitialisation -->
                     <form method="POST" class="needs-validation" novalidate>
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         
@@ -132,4 +137,5 @@ include 'includes/header.php';
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?> 
+<?php // Inclusion du pied de page HTML
+include 'includes/footer.php'; ?> 

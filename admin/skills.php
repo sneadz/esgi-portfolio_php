@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page d'administration des compétences (admin)
+// ===============================
 require_once '../config/init.php';
 
 $page_title = 'Gestion des Compétences';
 
-// Vérifier si l'utilisateur est connecté et admin
+// Vérification de la connexion et du rôle administrateur
 if (!isLoggedIn() || !isAdmin()) {
     redirect('../login.php');
 }
@@ -13,11 +16,12 @@ $success_message = '';
 
 $pdo = getDBConnection();
 
-// Traitement des actions
+// Traitement des actions d'ajout, modification ou suppression
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
@@ -35,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (empty($errors)) {
                 try {
-                    // Vérifier si la compétence existe déjà
+                    // Vérification de l'unicité de la compétence
                     $stmt = $pdo->prepare("SELECT id FROM skills WHERE name = ?");
                     $stmt->execute([$name]);
                     if ($stmt->fetch()) {
@@ -45,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($stmt->execute([$name, $description, $category])) {
                             $success_message = 'Compétence ajoutée avec succès !';
                         } else {
-                            $errors[] = 'Erreur lors de l\'ajout de la compétence.';
+                            $errors[] = "Erreur lors de l'ajout de la compétence.";
                         }
                     }
                 } catch (PDOException $e) {
@@ -53,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } elseif ($action === 'edit') {
-            // Modification d'une compétence
+            // Modification d'une compétence existante
             $skill_id = (int)($_POST['skill_id'] ?? 0);
             $name = sanitizeInput($_POST['name'] ?? '');
             $description = sanitizeInput($_POST['description'] ?? '');
@@ -65,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (empty($errors)) {
                 try {
-                    // Vérifier si la compétence existe déjà (sauf celle qu'on modifie)
+                    // Vérification de l'unicité de la compétence (hors celle modifiée)
                     $stmt = $pdo->prepare("SELECT id FROM skills WHERE name = ? AND id != ?");
                     $stmt->execute([$name, $skill_id]);
                     if ($stmt->fetch()) {
@@ -87,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $skill_id = (int)($_POST['skill_id'] ?? 0);
 
             try {
-                // Vérifier si la compétence est utilisée
+                // Vérification de l'utilisation de la compétence
                 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM user_skills WHERE skill_id = ?");
                 $stmt->execute([$skill_id]);
                 $usage_count = $stmt->fetch()['count'];
@@ -109,12 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Récupérer toutes les compétences
+// Récupération de toutes les compétences
 $stmt = $pdo->prepare("SELECT * FROM skills ORDER BY category, name");
 $stmt->execute();
 $skills = $stmt->fetchAll();
 
-// Récupérer les statistiques d'utilisation
+// Récupération des statistiques d'utilisation des compétences
 $stmt = $pdo->prepare("
     SELECT s.id, s.name, COUNT(us.id) as usage_count 
     FROM skills s 
@@ -125,6 +129,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $skill_stats = $stmt->fetchAll();
 
+// Inclusion de l'en-tête HTML
 include '../includes/header.php';
 ?>
 

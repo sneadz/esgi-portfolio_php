@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page des paramètres du compte utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Paramètres du Compte';
 
-// Rediriger si pas connecté
+// Redirection si l'utilisateur n'est pas connecté
 if (!isLoggedIn()) {
     redirect('login.php');
 }
@@ -18,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
@@ -28,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_password = $_POST['new_password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
 
-            // Validation des champs
+            // Validation des champs du formulaire
             if (empty($current_password)) {
                 $errors[] = 'Le mot de passe actuel est requis.';
             }
@@ -45,9 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Les mots de passe ne correspondent pas.';
             }
 
+            // Si pas d'erreurs, changement du mot de passe
             if (empty($errors)) {
                 try {
-                    // Vérifier le mot de passe actuel
+                    // Vérification du mot de passe actuel
                     $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
                     $stmt->execute([$_SESSION['user_id']]);
                     $user = $stmt->fetch();
@@ -55,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!$user || !password_verify($current_password, $user['password'])) {
                         $errors[] = 'Le mot de passe actuel est incorrect.';
                     } else {
-                        // Changer le mot de passe
+                        // Mise à jour du mot de passe
                         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT, ['cost' => PASSWORD_COST]);
                         $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
                         
@@ -73,11 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Récupérer les informations de l'utilisateur
+// Récupération des informations de l'utilisateur
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 

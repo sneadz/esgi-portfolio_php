@@ -1,3 +1,7 @@
+<?php // ===============================
+//  Pied de page HTML commun du site
+// =============================== ?>
+
     </main>
 
     <footer class="bg-dark text-light py-4 mt-5">

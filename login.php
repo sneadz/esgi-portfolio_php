@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page de connexion utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Connexion';
 
-// Rediriger si déjà connecté
+// Redirection si l'utilisateur est déjà connecté
 if (isLoggedIn()) {
     redirect('index.php');
 }
@@ -11,29 +14,30 @@ if (isLoggedIn()) {
 $errors = [];
 $email = '';
 
+// Traitement du formulaire de connexion
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = sanitizeInput($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $remember_me = isset($_POST['remember_me']);
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
 
-    // Validation des champs
+    // Validation des champs du formulaire
     if (empty($email)) {
-        $errors[] = 'L\'adresse email est requise.';
+        $errors[] = "L'adresse email est requise.";
     } elseif (!validateEmail($email)) {
-        $errors[] = 'L\'adresse email n\'est pas valide.';
+        $errors[] = "L'adresse email n'est pas valide.";
     }
 
     if (empty($password)) {
         $errors[] = 'Le mot de passe est requis.';
     }
 
-    // Tentative de connexion
+    // Tentative de connexion si pas d'erreurs
     if (empty($errors)) {
         try {
             $pdo = getDBConnection();
@@ -41,20 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
+            // Vérification du mot de passe
             if ($user && password_verify($password, $user['password'])) {
-                // Connexion réussie
+                // Connexion réussie : initialisation de la session
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
                 $_SESSION['user_role'] = $user['role'];
                 $_SESSION['last_activity'] = time();
 
-                // Gestion du "Se souvenir de moi"
+                // Gestion de l'option "Se souvenir de moi"
                 if ($remember_me) {
                     $token = bin2hex(random_bytes(32));
                     $stmt = $pdo->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
                     $stmt->execute([$token, $user['id']]);
-                    
                     setcookie('remember_token', $token, time() + REMEMBER_ME_LIFETIME, '/', '', false, true);
                 }
 
@@ -70,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -92,6 +97,7 @@ include 'includes/header.php';
                     </div>
                 <?php endif; ?>
 
+                <!-- Formulaire de connexion -->
                 <form method="POST" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     
@@ -159,7 +165,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Comptes de test -->
+        <!-- Bloc d'information : comptes de test -->
         <div class="card mt-4">
             <div class="card-header">
                 <h6 class="mb-0">
@@ -184,4 +190,5 @@ include 'includes/header.php';
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?> 
+<?php // Inclusion du pied de page HTML
+include 'includes/footer.php'; ?> 

@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page de profil utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Mon Profil';
 
-// Rediriger si pas connecté
+// Redirection si l'utilisateur n'est pas connecté
 if (!isLoggedIn()) {
     redirect('login.php');
 }
@@ -11,7 +14,7 @@ if (!isLoggedIn()) {
 $errors = [];
 $success_message = '';
 
-// Récupérer les informations de l'utilisateur
+// Récupération des informations de l'utilisateur
 $pdo = getDBConnection();
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
@@ -21,19 +24,19 @@ if (!$user) {
     redirect('logout.php');
 }
 
-// Traitement du formulaire de mise à jour
+// Traitement du formulaire de mise à jour du profil
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitizeInput($_POST['first_name'] ?? '');
     $last_name = sanitizeInput($_POST['last_name'] ?? '');
     $bio = sanitizeInput($_POST['bio'] ?? '');
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
 
-    // Validation des champs
+    // Validation des champs du formulaire
     if (empty($first_name)) {
         $errors[] = 'Le prénom est requis.';
     } elseif (strlen($first_name) < 2) {
@@ -46,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Le nom doit contenir au moins 2 caractères.';
     }
 
-    // Mise à jour du profil
+    // Mise à jour du profil utilisateur
     if (empty($errors)) {
         try {
             $stmt = $pdo->prepare("
@@ -59,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success_message = 'Profil mis à jour avec succès !';
                 $_SESSION['user_name'] = $first_name . ' ' . $last_name;
                 
-                // Mettre à jour les données affichées
+                // Mise à jour des données affichées
                 $user['first_name'] = $first_name;
                 $user['last_name'] = $last_name;
                 $user['bio'] = $bio;
@@ -72,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Récupérer les statistiques de l'utilisateur
+// Récupération des statistiques de l'utilisateur
 $stmt = $pdo->prepare("SELECT COUNT(*) as project_count FROM projects WHERE user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $project_count = $stmt->fetch()['project_count'];
@@ -81,6 +84,7 @@ $stmt = $pdo->prepare("SELECT COUNT(*) as skill_count FROM user_skills WHERE use
 $stmt->execute([$_SESSION['user_id']]);
 $skill_count = $stmt->fetch()['skill_count'];
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 

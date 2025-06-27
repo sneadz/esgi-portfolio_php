@@ -1,23 +1,25 @@
 <?php
+// ===============================
+//  Script de déconnexion utilisateur
+// ===============================
 require_once 'config/init.php';
 
-// Supprimer le cookie "Se souvenir de moi"
+// Suppression du cookie "Se souvenir de moi" si présent
 if (isset($_COOKIE['remember_token'])) {
     try {
         $pdo = getDBConnection();
         $stmt = $pdo->prepare("UPDATE users SET remember_token = NULL WHERE remember_token = ?");
         $stmt->execute([$_COOKIE['remember_token']]);
     } catch (PDOException $e) {
-        // Ignorer les erreurs de base de données
+        // On ignore les erreurs de base de données ici
     }
-    
     setcookie('remember_token', '', time() - 3600, '/', '', false, true);
 }
 
-// Détruire la session
+// Destruction de la session
 session_destroy();
 
-// Rediriger vers la page d'accueil
+// Message de confirmation et redirection
 $_SESSION['message'] = 'Vous avez été déconnecté avec succès.';
 $_SESSION['message_type'] = 'info';
 

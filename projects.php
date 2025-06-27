@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page de gestion des projets utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Mes Projets';
 
-// Rediriger si pas connecté
+// Redirection si l'utilisateur n'est pas connecté
 if (!isLoggedIn()) {
     redirect('login.php');
 }
@@ -11,15 +14,15 @@ if (!isLoggedIn()) {
 $errors = [];
 $success_message = '';
 
-// Créer le dossier d'upload s'il n'existe pas
+// Création du dossier d'upload s'il n'existe pas
 createUploadDirectory();
 
-// Traitement de l'ajout/modification de projet
+// Traitement de l'ajout, modification ou suppression de projet
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
@@ -31,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $description = sanitizeInput($_POST['description'] ?? '');
             $link = sanitizeInput($_POST['link'] ?? '');
             
+            // Validation des champs du formulaire
             if (empty($title)) {
                 $errors[] = 'Le titre du projet est requis.';
             }
@@ -55,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (move_uploaded_file($file['tmp_name'], $upload_path)) {
                                 $image_path = $filename;
                             } else {
-                                $errors[] = 'Erreur lors de l\'upload de l\'image.';
+                                $errors[] = "Erreur lors de l'upload de l'image.";
                             }
                         }
                     }
@@ -69,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($stmt->execute([$_SESSION['user_id'], $title, $description, $image_path, $link])) {
                             $success_message = 'Projet ajouté avec succès !';
                         } else {
-                            $errors[] = 'Erreur lors de l\'ajout du projet.';
+                            $errors[] = "Erreur lors de l'ajout du projet.";
                         }
                     }
                 } catch (PDOException $e) {
@@ -83,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $description = sanitizeInput($_POST['description'] ?? '');
             $link = sanitizeInput($_POST['link'] ?? '');
             
+            // Validation des champs du formulaire
             if (empty($title)) {
                 $errors[] = 'Le titre du projet est requis.';
             }
@@ -91,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $pdo = getDBConnection();
                     
-                    // Vérifier que le projet appartient à l'utilisateur
+                    // Vérification que le projet appartient à l'utilisateur
                     $stmt = $pdo->prepare("SELECT * FROM projects WHERE id = ? AND user_id = ?");
                     $stmt->execute([$project_id, $_SESSION['user_id']]);
                     $project = $stmt->fetch();
@@ -113,13 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $upload_path = UPLOAD_PATH . $filename;
                                 
                                 if (move_uploaded_file($file['tmp_name'], $upload_path)) {
-                                    // Supprimer l'ancienne image
+                                    // Suppression de l'ancienne image
                                     if ($project['image'] && file_exists(UPLOAD_PATH . $project['image'])) {
                                         unlink(UPLOAD_PATH . $project['image']);
                                     }
                                     $image_path = $filename;
                                 } else {
-                                    $errors[] = 'Erreur lors de l\'upload de l\'image.';
+                                    $errors[] = "Erreur lors de l'upload de l'image.";
                                 }
                             }
                         }
@@ -149,18 +154,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo = getDBConnection();
                 
-                // Récupérer les informations du projet
+                // Récupération des informations du projet
                 $stmt = $pdo->prepare("SELECT * FROM projects WHERE id = ? AND user_id = ?");
                 $stmt->execute([$project_id, $_SESSION['user_id']]);
                 $project = $stmt->fetch();
                 
                 if ($project) {
-                    // Supprimer l'image si elle existe
+                    // Suppression de l'image si elle existe
                     if ($project['image'] && file_exists(UPLOAD_PATH . $project['image'])) {
                         unlink(UPLOAD_PATH . $project['image']);
                     }
                     
-                    // Supprimer le projet
+                    // Suppression du projet
                     $stmt = $pdo->prepare("DELETE FROM projects WHERE id = ? AND user_id = ?");
                     if ($stmt->execute([$project_id, $_SESSION['user_id']])) {
                         $success_message = 'Projet supprimé avec succès !';
@@ -177,12 +182,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Récupérer les projets de l'utilisateur
+// Récupération des projets de l'utilisateur
 $pdo = getDBConnection();
 $stmt = $pdo->prepare("SELECT * FROM projects WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->execute([$_SESSION['user_id']]);
 $projects = $stmt->fetchAll();
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 

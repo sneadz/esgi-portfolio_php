@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page d'inscription utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Inscription';
 
-// Rediriger si déjà connecté
+// Redirection si l'utilisateur est déjà connecté
 if (isLoggedIn()) {
     redirect('index.php');
 }
@@ -16,6 +19,7 @@ $form_data = [
     'bio' => ''
 ];
 
+// Traitement du formulaire d'inscription
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form_data = [
         'first_name' => sanitizeInput($_POST['first_name'] ?? ''),
@@ -27,12 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
 
-    // Validation des champs
+    // Validation des champs du formulaire
     if (empty($form_data['first_name'])) {
         $errors[] = 'Le prénom est requis.';
     } elseif (strlen($form_data['first_name']) < 2) {
@@ -46,9 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($form_data['email'])) {
-        $errors[] = 'L\'adresse email est requise.';
+        $errors[] = "L'adresse email est requise.";
     } elseif (!validateEmail($form_data['email'])) {
-        $errors[] = 'L\'adresse email n\'est pas valide.';
+        $errors[] = "L'adresse email n'est pas valide.";
     }
 
     if (empty($password)) {
@@ -63,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Les mots de passe ne correspondent pas.';
     }
 
-    // Vérifier si l'email existe déjà
+    // Vérification de l'unicité de l'email
     if (empty($errors)) {
         try {
             $pdo = getDBConnection();
@@ -78,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Création du compte
+    // Création du compte utilisateur
     if (empty($errors)) {
         try {
             $pdo = getDBConnection();
@@ -108,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -130,6 +135,7 @@ include 'includes/header.php';
                     </div>
                 <?php endif; ?>
 
+                <!-- Formulaire d'inscription -->
                 <form method="POST" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     

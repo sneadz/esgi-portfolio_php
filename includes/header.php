@@ -1,3 +1,6 @@
+<?php // ===============================
+//  En-tête HTML commun du site
+// =============================== ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>

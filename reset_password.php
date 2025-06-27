@@ -1,9 +1,12 @@
 <?php
+// ===============================
+//  Page de réinitialisation du mot de passe
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Réinitialisation du Mot de Passe';
 
-// Rediriger si déjà connecté
+// Redirection si l'utilisateur est déjà connecté
 if (isLoggedIn()) {
     redirect('index.php');
 }
@@ -12,7 +15,7 @@ $errors = [];
 $success_message = '';
 $token = $_GET['token'] ?? '';
 
-// Vérifier si le token est valide
+// Vérification de la présence du token
 if (empty($token)) {
     redirect('login.php');
 }
@@ -23,6 +26,7 @@ try {
     $stmt->execute([$token]);
     $user = $stmt->fetch();
 
+    // Vérification de la validité du token
     if (!$user) {
         $errors[] = 'Le lien de réinitialisation est invalide ou a expiré.';
     }
@@ -36,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($errors)) {
     $confirm_password = $_POST['confirm_password'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
-    // Validation CSRF
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
@@ -54,9 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($errors)) {
         $errors[] = 'Les mots de passe ne correspondent pas.';
     }
 
+    // Si pas d'erreurs, mise à jour du mot de passe
     if (empty($errors)) {
         try {
-            // Mettre à jour le mot de passe et supprimer le token
+            // Mise à jour du mot de passe et suppression du token
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT, ['cost' => PASSWORD_COST]);
             $stmt = $pdo->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
             
@@ -71,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($errors)) {
     }
 }
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -108,6 +114,7 @@ include 'includes/header.php';
                         vous pouvez maintenant définir votre nouveau mot de passe.
                     </p>
 
+                    <!-- Formulaire de réinitialisation du mot de passe -->
                     <form method="POST" class="needs-validation" novalidate>
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         
@@ -164,4 +171,5 @@ include 'includes/header.php';
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?> 
+<?php // Inclusion du pied de page HTML
+include 'includes/footer.php'; ?> 

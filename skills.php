@@ -1,8 +1,12 @@
 <?php
+// ===============================
+//  Page de gestion des compétences utilisateur
+// ===============================
 require_once 'config/init.php';
 
 $page_title = 'Mes Compétences';
 
+// Vérification de la connexion utilisateur
 if (!isLoggedIn()) {
     redirect('login.php');
 }
@@ -15,6 +19,7 @@ $pdo = getDBConnection();
 // Traitement de l'ajout ou modification de compétences
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_token = $_POST['csrf_token'] ?? '';
+    // Vérification du token CSRF
     if (!verifyCSRFToken($csrf_token)) {
         $errors[] = 'Erreur de sécurité. Veuillez réessayer.';
     }
@@ -22,17 +27,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selected_skills = $_POST['skills'] ?? [];
     $levels = $_POST['levels'] ?? [];
 
+    // Vérification qu'au moins une compétence est sélectionnée
     if (empty($selected_skills)) {
         $errors[] = 'Veuillez sélectionner au moins une compétence.';
     }
 
+    // Si pas d'erreurs, mise à jour des compétences en base
     if (empty($errors)) {
         try {
-            // Supprimer les anciennes compétences
+            // Suppression des anciennes compétences de l'utilisateur
             $stmt = $pdo->prepare('DELETE FROM user_skills WHERE user_id = ?');
             $stmt->execute([$_SESSION['user_id']]);
 
-            // Ajouter les nouvelles compétences
+            // Ajout des nouvelles compétences sélectionnées
             $stmt = $pdo->prepare('INSERT INTO user_skills (user_id, skill_id, level) VALUES (?, ?, ?)');
             foreach ($selected_skills as $skill_id) {
                 $level = $levels[$skill_id] ?? 'débutant';
@@ -45,12 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Récupérer toutes les compétences disponibles
+// Récupération de toutes les compétences disponibles
 $stmt = $pdo->prepare('SELECT * FROM skills ORDER BY category, name');
 $stmt->execute();
 $all_skills = $stmt->fetchAll();
 
-// Récupérer les compétences de l'utilisateur
+// Récupération des compétences de l'utilisateur
 $stmt = $pdo->prepare('SELECT skill_id, level FROM user_skills WHERE user_id = ?');
 $stmt->execute([$_SESSION['user_id']]);
 $user_skills = $stmt->fetchAll();
@@ -59,7 +66,7 @@ foreach ($user_skills as $us) {
     $user_skills_map[$us['skill_id']] = $us['level'];
 }
 
-// Récupérer les détails des compétences sélectionnées
+// Récupération des détails des compétences sélectionnées
 $selected_skills_details = [];
 if (!empty($user_skills_map)) {
     $skill_ids = array_keys($user_skills_map);
@@ -69,6 +76,7 @@ if (!empty($user_skills_map)) {
     $selected_skills_details = $stmt->fetchAll();
 }
 
+// Définition des niveaux de compétence
 $levels = [
     'débutant' => 'Débutant',
     'intermédiaire' => 'Intermédiaire',
@@ -76,6 +84,7 @@ $levels = [
     'expert' => 'Expert'
 ];
 
+// Inclusion de l'en-tête HTML
 include 'includes/header.php';
 ?>
 
@@ -150,6 +159,7 @@ include 'includes/header.php';
                     </div>
                 <?php endif; ?>
 
+                <!-- Formulaire de gestion des compétences -->
                 <form method="POST" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <div class="mb-3">
@@ -197,4 +207,5 @@ include 'includes/header.php';
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?> 
+<?php // Inclusion du pied de page HTML
+include 'includes/footer.php'; ?> 
