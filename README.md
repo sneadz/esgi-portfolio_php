@@ -142,6 +142,9 @@ La base de données est pré-remplie avec :
 - **9 projets exemples** (3 projets par utilisateur)
 - **Attributions de compétences** avec différents niveaux
 
+Le fichier SQL de données de test est dans database/schema.sql
+
+
 ## Fonctionnalités Détaillées
 
 ### Pour les Utilisateurs
